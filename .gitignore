@@ -1,0 +1,8 @@
+blobs/
+data/
+catboost_info/
+notebooks/
+__pycache__/
+*.pyc
+.env
+db.sqlite3

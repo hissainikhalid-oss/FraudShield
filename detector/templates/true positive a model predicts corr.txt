@@ -1,0 +1,7 @@
+true positive: a model predicts correct positive output and also the actual output is also a positive.
+true negative: a model predicts correct negative output and also the actual output is also a negative
+false positive: a model predicts a positive outcome and the actual outcome is negative
+false negative: a model predicts a negative outcome and the actual outcome is positive
+
+Accuracy: it shows how many predictions the model got right out of all the predictions. it can be wrong sometimes and mislead when one class is more dominant than other
+it can be calculate correctly by using formula TP+TN/TP+TN+FP+FN

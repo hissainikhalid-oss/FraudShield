@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FraudShield — AI Fraud Detection</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ===== ROOT ===== */
+:root {
+  --bg: #F0EBE1;
+  --surface: #FFFFFF;
+  --surface2: #FAF6EF;
+  --sidebar: #180F2D;
+  --primary: #7C3AED;
+  --primary-soft: rgba(124,58,237,0.12);
+  --primary-glow: rgba(124,58,237,0.22);
+  --coral: #E63946;
+  --coral-soft: rgba(230,57,70,0.1);
+  --teal: #0D9488;
+  --teal-soft: rgba(13,148,136,0.1);
+  --amber: #D97706;
+  --amber-soft: rgba(217,119,6,0.1);
+  --blue: #1D4ED8;
+  --blue-soft: rgba(29,78,216,0.1);
+  --text: #1A0F30;
+  --text2: #4A4368;
+  --muted: #9590AD;
+  --border: #E0D8CC;
+  --shadow-sm: 0 2px 10px rgba(26,15,48,0.06);
+  --shadow: 0 4px 22px rgba(26,15,48,0.09);
+  --shadow-lg: 0 12px 44px rgba(26,15,48,0.14);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ===== LAYOUT ===== */
+.layout { display: flex; min-height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 244px; min-height: 100vh;
+  background: var(--sidebar);
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 200;
+  display: flex; flex-direction: column;
+  padding: 24px 0 20px;
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(124,58,237,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(13,148,136,0.15) 0%, transparent 55%);
+}
+.sb-logo { padding: 0 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 14px; }
+.sb-logo-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, #7C3AED, #4C1D95);
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 6px 18px rgba(124,58,237,0.45);
+  margin-bottom: 11px;
+}
+.sb-logo-name { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 900; color: #fff; letter-spacing: 0.3px; }
+.sb-logo-tag { font-size: 0.62rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+.sb-section { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.2); padding: 0 18px; margin-bottom: 5px; margin-top: 6px; }
+.sb-nav { padding: 0 10px; display: flex; flex-direction: column; gap: 3px; }
+.nav-btn {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 11px;
+  cursor: pointer; transition: all 0.2s;
+  background: transparent; border: none; width: 100%; text-align: left;
+  color: rgba(255,255,255,0.45); font-family: 'Outfit', sans-serif;
+  font-size: 0.87rem; font-weight: 500; position: relative;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); }
+.nav-btn.active { background: rgba(124,58,237,0.2); color: #fff; }
+.nav-btn.active::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; background: #A78BFA; border-radius: 0 3px 3px 0; }
+.nav-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.88rem; background: rgba(255,255,255,0.05);
+  flex-shrink: 0; transition: background 0.2s;
+}
+.nav-btn.active .nav-icon { background: rgba(124,58,237,0.28); }
+.sb-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 10px 18px; }
+.sb-bottom { margin-top: auto; padding: 14px 18px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+.sb-status { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: rgba(255,255,255,0.38); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #34D399; flex-shrink: 0; animation: sPulse 2.5s infinite; }
+@keyframes sPulse { 0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)} 50%{box-shadow:0 0 0 4px rgba(52,211,153,0)} }
+.sb-model { font-family: 'Space Mono', monospace; font-size: 0.63rem; color: rgba(255,255,255,0.2); margin-top: 5px; }
+
+/* ===== MAIN ===== */
+.main { margin-left: 244px; flex: 1; min-height: 100vh; }
+.topbar {
+  background: rgba(240,235,225,0.88);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px; height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-title { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.topbar-pills { display: flex; gap: 10px; }
+.t-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 99px; padding: 5px 13px;
+  font-size: 0.76rem; color: var(--text2); font-weight: 500;
+}
+.t-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #34D399; flex-shrink: 0; }
+
+/* ===== PAGES ===== */
+.page { display: none; padding: 28px 30px; }
+.page.active { display: block; }
+
+/* ===== CARD ===== */
+.card {
+  background: var(--surface); border-radius: 16px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.card-head {
+  padding: 14px 18px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+.card-body { padding: 18px; }
+
+/* ===== KPI STAT CARDS ===== */
+.kpi {
+  background: var(--surface); border-radius: 16px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  padding: 18px 18px 16px; position: relative; overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.kpi:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi.v::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
+.kpi.r::before { background: linear-gradient(90deg, #E63946, #FB7185); }
+.kpi.g::before { background: linear-gradient(90deg, #0D9488, #34D399); }
+.kpi.a::before { background: linear-gradient(90deg, #D97706, #FCD34D); }
+.kpi.b::before { background: linear-gradient(90deg, #1D4ED8, #60A5FA); }
+.kpi-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; margin-bottom: 12px;
+}
+.kpi-icon.v { background: var(--primary-soft); }
+.kpi-icon.r { background: var(--coral-soft); }
+.kpi-icon.g { background: var(--teal-soft); }
+.kpi-icon.a { background: var(--amber-soft); }
+.kpi-icon.b { background: var(--blue-soft); }
+.kpi-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 3px; }
+.kpi-val { font-family: 'Space Mono', monospace; font-size: 1.55rem; font-weight: 700; color: var(--text); line-height: 1; }
+.kpi-val sup { font-size: 0.8rem; }
+.kpi-sub { font-size: 0.7rem; color: var(--muted); margin-top: 5px; }
+
+/* ===== OVERVIEW HERO BANNER ===== */
+.hero-banner {
+  background: linear-gradient(135deg, #180F2D 0%, #2D1B69 50%, #1C3461 100%);
+  border-radius: 20px; padding: 30px 34px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; overflow: hidden; position: relative;
+}
+.hero-banner::before {
+  content: ''; position: absolute; right: -50px; top: -50px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: rgba(124,58,237,0.18); pointer-events: none;
+}
+.hero-banner::after {
+  content: ''; position: absolute; right: 80px; bottom: -70px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(13,148,136,0.14); pointer-events: none;
+}
+.hb-title { font-family: 'Fraunces', serif; font-size: 1.85rem; font-weight: 900; color: #fff; line-height: 1.18; margin-bottom: 8px; }
+.hb-title span { color: #C4B5FD; }
+.hb-sub { font-size: 0.84rem; color: rgba(255,255,255,0.52); line-height: 1.65; max-width: 400px; }
+.hb-stats { display: flex; gap: 24px; margin-top: 18px; }
+.hb-stat h3 { font-family: 'Space Mono', monospace; font-size: 1.5rem; font-weight: 700; color: #C4B5FD; }
+.hb-stat p { font-size: 0.66rem; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; }
+.hb-right { z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.hb-ring {
+  width: 76px; height: 76px; border-radius: 50%;
+  border: 2.5px solid rgba(196,181,253,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.65rem;
+  animation: ringGlow 3.5s ease-in-out infinite;
+}
+@keyframes ringGlow {
+  0%,100%{border-color:rgba(196,181,253,0.3);box-shadow:none}
+  50%{border-color:rgba(196,181,253,0.7);box-shadow:0 0 22px rgba(124,58,237,0.3)}
+}
+.hb-ring-label { font-size: 0.62rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+
+/* ===== SECTION HEADING ===== */
+.sec-title { font-family: 'Fraunces', serif; font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.sec-sub { font-size: 0.84rem; color: var(--muted); margin-bottom: 22px; }
+
+/* ===== CHART ===== */
+.chart-wrap { position: relative; height: 210px; }
+.chart-wrap.sm { height: 175px; }
+
+/* ===== CONFUSION MATRIX ===== */
+.cm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cm-cell { border-radius: 11px; padding: 14px; text-align: center; border: 1.5px solid; }
+.cm-num { font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700; }
+.cm-lbl { font-size: 0.63rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+/* ===== MODEL BARS ===== */
+.model-row { display: flex; align-items: center; gap: 11px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.model-row:last-child { border-bottom: none; }
+.model-name { font-size: 0.8rem; font-weight: 600; color: var(--text); width: 130px; flex-shrink: 0; }
+.model-track { flex: 1; background: var(--surface2); border-radius: 99px; height: 7px; overflow: hidden; }
+.model-fill { height: 100%; border-radius: 99px; transition: width 1.1s ease; }
+.model-score { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--text2); width: 46px; text-align: right; }
+.best-tag { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); border-radius: 6px; font-size: 0.58rem; padding: 2px 6px; font-weight: 700; letter-spacing: 0.3px; vertical-align: middle; margin-left: 4px; }
+
+/* ===== ANALYZER FORM ===== */
+.field-group { margin-bottom: 13px; }
+.field-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 5px; display: block; }
+.field-input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); border-radius: 10px; padding: 9px 12px;
+  font-size: 0.86rem; font-family: 'Outfit', sans-serif; outline: none; transition: all 0.2s;
+}
+.field-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--primary-soft); }
+.field-input option { background: #fff; }
+.btn-submit {
+  width: 100%; background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  border: none; border-radius: 10px; padding: 10px;
+  font-weight: 700; font-size: 0.88rem; color: #fff; cursor: pointer;
+  font-family: 'Outfit', sans-serif; transition: all 0.25s;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.3); margin-top: 2px;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.4); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.party-badge { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+.party-badge.snd { color: var(--primary); }
+.party-badge.rcv { color: var(--coral); }
+
+/* ===== RESULT BOX ===== */
+.result-box {
+  border-radius: 12px; padding: 13px 15px;
+  border: 1.5px solid; margin-top: 14px;
+  animation: slideUp 0.4s ease;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.result-box.fraud      { background: var(--coral-soft); border-color: rgba(230,57,70,0.3); }
+.result-box.suspicious { background: var(--amber-soft); border-color: rgba(217,119,6,0.3); }
+.result-box.safe       { background: var(--teal-soft);  border-color: rgba(13,148,136,0.3); }
+.result-status { font-family: 'Space Mono', monospace; font-size: 0.87rem; font-weight: 700; margin-bottom: 4px; }
+.result-status.fraud      { color: var(--coral); }
+.result-status.suspicious { color: var(--amber); }
+.result-status.safe       { color: var(--teal); }
+
+/* ===== INDICATORS ===== */
+.ind-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.ind-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ind-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--amber-soft); color: var(--amber);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.84rem; flex-shrink: 0;
+}
+.ind-lbl { font-size: 0.83rem; font-weight: 600; color: var(--text); }
+.ind-desc { font-size: 0.71rem; color: var(--muted); margin-top: 1px; }
+
+/* ===== STATS TABLE ===== */
+.sys-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.sys-row:last-child { border-bottom: none; }
+.sys-k { font-size: 0.78rem; color: var(--muted); }
+.sys-v { font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+
+/* ===== TRANSACTION TABLE ===== */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 10px 14px; border-bottom: 1.5px solid var(--border); font-weight: 700; text-align: left; background: var(--surface2); }
+.data-table td { padding: 10px 14px; font-size: 0.83rem; border-bottom: 1px solid rgba(0,0,0,0.04); color: var(--text2); }
+.data-table tbody tr:hover { background: var(--surface2); }
+.badge-fraud { background: var(--coral-soft); color: var(--coral); border: 1px solid rgba(230,57,70,0.2); border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+.badge-safe  { background: var(--teal-soft);  color: var(--teal);  border: 1px solid rgba(13,148,136,0.2); border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+.empty-row { text-align: center; color: var(--muted); padding: 28px; font-size: 0.84rem; }
+
+/* ===== ABOUT PAGE ===== */
+.how-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 22px 0; }
+.how-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 22px 16px; text-align: center;
+  transition: all 0.28s; position: relative; overflow: hidden;
+}
+.how-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.how-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; opacity: 0; transition: opacity 0.28s; }
+.how-card:hover::after { opacity: 1; }
+.how-card:nth-child(1)::after { background: var(--primary); }
+.how-card:nth-child(2)::after { background: var(--teal); }
+.how-card:nth-child(3)::after { background: var(--coral); }
+.how-card:nth-child(4)::after { background: var(--amber); }
+.how-num { font-family: 'Space Mono', monospace; font-size: 0.62rem; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+.how-emoji { font-size: 1.5rem; margin-bottom: 10px; }
+.how-card h3 { font-family: 'Fraunces', serif; font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+.how-card p { font-size: 0.75rem; color: var(--muted); line-height: 1.65; }
+.tech-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 20px; }
+.tech-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.tech-card h4 { font-family: 'Fraunces', serif; font-size: 0.88rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.tech-card p { font-size: 0.75rem; color: var(--muted); line-height: 1.62; }
+
+/* ===== AI DRAWER ===== */
+.ai-backdrop { position: fixed; inset: 0; background: rgba(24,15,45,0.5); backdrop-filter: blur(4px); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.ai-backdrop.open { opacity: 1; pointer-events: all; }
+.ai-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 440px;
+  background: var(--surface); border-left: 1.5px solid var(--border);
+  z-index: 1002; transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(.25,.8,.25,1);
+  display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(26,15,48,0.14);
+}
+.ai-drawer.open { transform: translateX(0); }
+.drawer-head {
+  padding: 16px 18px 13px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary-soft), transparent);
+}
+.drawer-head-l { display: flex; align-items: center; gap: 10px; }
+.drawer-badge { width: 32px; height: 32px; border-radius: 9px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+.drawer-title { font-family: 'Fraunces', serif; font-size: 0.87rem; font-weight: 700; color: var(--primary); }
+.drawer-sub { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
+.drawer-close { width: 28px; height: 28px; border-radius: 7px; background: var(--surface2); border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; transition: all 0.18s; }
+.drawer-close:hover { background: var(--coral-soft); color: var(--coral); }
+.drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+.d-lbl { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; display: block; }
+.d-inp {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); border-radius: 9px; padding: 8px 11px;
+  font-size: 0.84rem; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.18s;
+}
+.d-inp:focus { border-color: var(--primary); background: #fff; }
+.d-inp option { background: #fff; }
+.btn-d-analyze {
+  width: 100%; padding: 10px; background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  border: none; border-radius: 10px; color: #fff; font-weight: 700; font-size: 0.88rem;
+  cursor: pointer; margin-top: 4px; transition: all 0.22s; font-family: 'Outfit', sans-serif;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+}
+.btn-d-analyze:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-d-analyze:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.d-hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.d-verdict { border-radius: 11px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid; margin-bottom: 11px; }
+.d-verdict.fraud       { background: var(--coral-soft); border-color: rgba(230,57,70,0.3); }
+.d-verdict.suspicious  { background: var(--amber-soft); border-color: rgba(217,119,6,0.3); }
+.d-verdict.safe        { background: var(--teal-soft);  border-color: rgba(13,148,136,0.28); }
+.d-vicon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.d-vicon.fraud      { background: rgba(230,57,70,0.15); }
+.d-vicon.suspicious { background: rgba(217,119,6,0.15); }
+.d-vicon.safe       { background: rgba(13,148,136,0.12); }
+.d-vtitle { font-family: 'Space Mono', monospace; font-size: 0.85rem; font-weight: 700; }
+.d-vtitle.fraud      { color: var(--coral); }
+.d-vtitle.suspicious { color: var(--amber); }
+.d-vtitle.safe       { color: var(--teal); }
+.d-vsub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.d-risk-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 5px; }
+.d-risk-track { height: 6px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--border); overflow: hidden; margin-bottom: 11px; }
+.d-risk-fill { height: 100%; border-radius: 99px; width: 0%; transition: width 1s ease; }
+.d-factors { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 11px; }
+.d-factor { background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px; }
+.d-factor-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.d-factor-name { font-size: 0.73rem; font-weight: 600; color: var(--text); }
+.d-pill { font-size: 0.6rem; padding: 2px 7px; border-radius: 99px; font-weight: 700; }
+.d-pill.high   { background: var(--coral-soft); color: var(--coral); border: 1px solid rgba(230,57,70,0.22); }
+.d-pill.medium { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(217,119,6,0.22); }
+.d-pill.low    { background: var(--teal-soft);  color: var(--teal);  border: 1px solid rgba(13,148,136,0.2); }
+.d-factor-desc { font-size: 0.68rem; color: var(--muted); line-height: 1.5; }
+.d-explain { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px; margin-bottom: 11px; }
+.d-explain-tag { font-size: 0.6rem; font-family: 'Space Mono', monospace; color: var(--primary); letter-spacing: 1px; margin-bottom: 6px; }
+.d-explain-text { font-size: 0.79rem; line-height: 1.72; color: var(--text2); white-space: pre-wrap; }
+.d-challenge { background: rgba(217,119,6,0.07); border: 1px solid rgba(217,119,6,0.2); border-radius: 11px; padding: 13px; margin-bottom: 11px; }
+.d-challenge-title { font-size: 0.81rem; font-weight: 700; color: var(--amber); margin-bottom: 2px; }
+.d-challenge-sub   { font-size: 0.7rem; color: var(--muted); margin-bottom: 8px; }
+.btn-challenge {
+  width: 100%; padding: 8px; background: var(--amber-soft);
+  border: 1px solid rgba(217,119,6,0.28); border-radius: 8px;
+  color: var(--amber); font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: all 0.18s; font-family: 'Outfit', sans-serif;
+}
+.btn-challenge:hover { background: rgba(217,119,6,0.16); }
+
+/* ===== CHAT ===== */
+.chat-fab {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, #E63946, #BE123C);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; box-shadow: 0 8px 26px rgba(230,57,70,0.4);
+  z-index: 1000; transition: all 0.22s;
+  animation: fabFloat 4s ease-in-out infinite;
+}
+.chat-fab:hover { transform: scale(1.1); animation: none; }
+.ai-fab {
+  position: fixed; bottom: 94px; right: 28px;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #4C1D95);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; box-shadow: 0 8px 26px rgba(124,58,237,0.45);
+  z-index: 1000; transition: all 0.22s;
+  animation: fabFloat 4s ease-in-out infinite 0.5s;
+}
+.ai-fab:hover { transform: scale(1.1); animation: none; }
+@keyframes fabFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.fab-tip {
+  position: absolute; right: 64px; white-space: nowrap;
+  background: var(--text); color: #fff; border-radius: 7px;
+  padding: 5px 11px; font-size: 0.73rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.18s;
+}
+.chat-fab:hover .fab-tip, .ai-fab:hover .fab-tip { opacity: 1; }
+
+.chat-window {
+  position: fixed; bottom: 94px; right: 28px;
+  width: 342px; height: 460px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 20px; z-index: 1003;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: scale(0.85) translateY(16px); transform-origin: bottom right;
+  opacity: 0; pointer-events: none; box-shadow: var(--shadow-lg);
+  transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+.chat-window.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+.chat-head {
+  padding: 13px 15px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--coral-soft), transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 9px;
+}
+.chat-head-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--coral-soft); display: flex; align-items: center; justify-content: center; font-size: 0.88rem; }
+.chat-head-title { font-family: 'Fraunces', serif; font-size: 0.88rem; font-weight: 700; color: var(--coral); }
+.chat-head-sub { font-size: 0.68rem; color: var(--muted); }
+.chat-close { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 3px; }
+.chat-close:hover { color: var(--coral); }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 13px; display: flex; flex-direction: column; gap: 9px; }
+.bubble { max-width: 82%; padding: 9px 12px; border-radius: 12px; font-size: 0.81rem; line-height: 1.55; }
+.bubble.user { background: var(--primary-soft); border: 1px solid rgba(124,58,237,0.2); color: var(--text); align-self: flex-end; border-bottom-right-radius: 4px; }
+.bubble.bot  { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-input-row { display: flex; gap: 7px; padding: 10px; border-top: 1px solid var(--border); }
+.chat-inp { flex: 1; background: var(--surface2); border: 1.5px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: 0.81rem; font-family: 'Outfit', sans-serif; outline: none; }
+.chat-inp:focus { border-color: var(--coral); }
+.chat-send { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg,#E63946,#BE123C); border: none; color: #fff; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; }
+.chat-send:hover { opacity: 0.85; }
+.chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== TYPING DOTS ===== */
+.typing-dots span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--primary); margin: 0 2px; animation: tdBounce 1.2s infinite; }
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes tdBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:992px) {
+  .how-grid{grid-template-columns:repeat(2,1fr)}
+  .tech-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px) {
+  .sidebar{width:58px;padding:14px 0}
+  .sb-logo-name,.sb-logo-tag,.sb-section,.sb-model,.sb-status span:not(.status-dot),.nav-btn span:not(.nav-icon){display:none}
+  .sb-logo{padding:0 10px 14px}
+  .main{margin-left:58px}
+  .page{padding:16px}
+  .topbar{padding:0 16px}
+  .hero-banner{flex-direction:column;gap:18px}
+  .hb-stats{flex-wrap:wrap;gap:14px}
+  .ai-drawer{width:100%}
+  .how-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">🛡️</div>
+    <div class="sb-logo-name">FraudShield</div>
+    <div class="sb-logo-tag">AI Detection System</div>
+  </div>
+
+  <div class="sb-section">Navigation</div>
+  <nav class="sb-nav">
+    <button class="nav-btn active" onclick="goPage('home',this)" id="nb-home">
+      <div class="nav-icon">🏠</div>
+      <span>Overview</span>
+    </button>
+    <button class="nav-btn" onclick="goPage('dashboard',this)" id="nb-dash">
+      <div class="nav-icon">🔍</div>
+      <span>Analyzer</span>
+    </button>
+    <button class="nav-btn" onclick="goPage('about',this)" id="nb-about">
+      <div class="nav-icon">📖</div>
+      <span>How It Works</span>
+    </button>
+  </nav>
+
+  <div class="sb-divider"></div>
+  <div class="sb-section">Quick Actions</div>
+  <nav class="sb-nav">
+    <button class="nav-btn" onclick="toggleDrawer()">
+      <div class="nav-icon">🤖</div>
+      <span>AI Analyzer</span>
+    </button>
+    <button class="nav-btn" onclick="toggleChat()">
+      <div class="nav-icon">💬</div>
+      <span>AI Chatbot</span>
+    </button>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-status">
+      <div class="status-dot"></div>
+      <span>System Online</span>
+    </div>
+    <div class="sb-model">RF Model · v1.0 · 99.95% acc</div>
+  </div>
+</aside>
+
+<!-- ════════════ MAIN CONTENT ════════════ -->
+<main class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Overview</div>
+    <div class="topbar-pills">
+      <div class="t-pill"><div class="dot"></div>99.95% Accuracy</div>
+      <div class="t-pill">🎓 B.E. Capstone — KCT</div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 1: OVERVIEW ══ -->
+  <section id="page-home" class="page active">
+
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div>
+        <div class="hb-title">AI-Powered<br><span>Fraud Detection</span></div>
+        <div class="hb-sub">Random Forest model trained on 284,807 real transactions. 10 algorithms benchmarked. Deployed live with Groq + LLaMA 3.1 explanations.</div>
+        <div class="hb-stats">
+          <div class="hb-stat"><h3>284K</h3><p>Transactions</p></div>
+          <div class="hb-stat"><h3>492</h3><p>Fraud Cases</p></div>
+          <div class="hb-stat"><h3>10</h3><p>Models Tested</p></div>
+          <div class="hb-stat"><h3>0.17%</h3><p>Fraud Rate</p></div>
+        </div>
+      </div>
+      <div class="hb-right">
+        <div class="hb-ring">🛡️</div>
+        <div class="hb-ring-label">Live · PythonAnywhere</div>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="row g-3 mb-4">
+      <div class="col"><div class="kpi v"><div class="kpi-icon v">🎯</div><div class="kpi-label">Accuracy</div><div class="kpi-val">99.95<sup>%</sup></div><div class="kpi-sub">Final RF model</div></div></div>
+      <div class="col"><div class="kpi r"><div class="kpi-icon r">🔬</div><div class="kpi-label">Precision</div><div class="kpi-val">94.87<sup>%</sup></div><div class="kpi-sub">Low false alarms</div></div></div>
+      <div class="col"><div class="kpi g"><div class="kpi-icon g">📡</div><div class="kpi-label">Recall</div><div class="kpi-val">75.51<sup>%</sup></div><div class="kpi-sub">Fraud catch rate</div></div></div>
+      <div class="col"><div class="kpi a"><div class="kpi-icon a">⚡</div><div class="kpi-label">F1-Score</div><div class="kpi-val">84.09<sup>%</sup></div><div class="kpi-sub">Balanced metric</div></div></div>
+      <div class="col"><div class="kpi b"><div class="kpi-icon b">📈</div><div class="kpi-label">AUC-ROC</div><div class="kpi-val">95.22<sup>%</sup></div><div class="kpi-sub">Discrimination</div></div></div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-7">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Model F1-Score Comparison (10 Algorithms)</span></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="modelF1Chart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Top 10 Feature Importance</span></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="featChart"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Class Distribution</span></div>
+          <div class="card-body">
+            <div class="chart-wrap sm"><canvas id="classDonut"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Confusion Matrix — Test Set</span></div>
+          <div class="card-body">
+            <div class="cm-grid">
+              <div class="cm-cell" style="background:var(--teal-soft);border-color:rgba(13,148,136,0.3)">
+                <div class="cm-num" style="color:var(--teal)">56,864</div>
+                <div class="cm-lbl">True Negative</div>
+              </div>
+              <div class="cm-cell" style="background:var(--coral-soft);border-color:rgba(230,57,70,0.3)">
+                <div class="cm-num" style="color:var(--coral)">4</div>
+                <div class="cm-lbl">False Positive</div>
+              </div>
+              <div class="cm-cell" style="background:var(--amber-soft);border-color:rgba(217,119,6,0.3)">
+                <div class="cm-num" style="color:var(--amber)">24</div>
+                <div class="cm-lbl">False Negative</div>
+              </div>
+              <div class="cm-cell" style="background:var(--primary-soft);border-color:rgba(124,58,237,0.3)">
+                <div class="cm-num" style="color:var(--primary)">74</div>
+                <div class="cm-lbl">True Positive</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Top 5 AUC-ROC Scores</span></div>
+          <div class="card-body"><div class="chart-wrap sm"><canvas id="aucChart"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PAGE 2: ANALYZER ══ -->
+  <section id="page-dashboard" class="page">
+    <div class="sec-title">Transaction Analyzer</div>
+    <div class="sec-sub">Submit a transaction to get instant fraud probability from the trained Random Forest model</div>
+
+    <!-- Dashboard stat counters (JS managed) -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="kpi b"><div class="kpi-icon b">📊</div><div class="kpi-label">Total Analyzed</div><div class="kpi-val" id="statTotal">0</div><div class="kpi-sub">This session</div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="kpi r"><div class="kpi-icon r">🚨</div><div class="kpi-label">Fraud Flagged</div><div class="kpi-val" id="statFraud">0</div><div class="kpi-sub">High risk detected</div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="kpi g"><div class="kpi-icon g">✅</div><div class="kpi-label">Safe Cleared</div><div class="kpi-val" id="statSafe">0</div><div class="kpi-sub">Legitimate passes</div></div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- FORM COLUMN -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">💳 New Transaction</span></div>
+          <div class="card-body">
+
+            <!-- Sender block -->
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:11px">
+              <span class="party-badge snd">↑ Sender Details</span>
+              <div class="row g-2">
+                <div class="col-7">
+                  <label class="field-label">Sender Name</label>
+                  <input type="text" id="senderName" class="field-input" placeholder="e.g. Khalid"/>
+                </div>
+                <div class="col-5">
+                  <label class="field-label">Acct. (last 4)</label>
+                  <input type="text" id="senderAcc" class="field-input" placeholder="4521" maxlength="4"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Receiver block -->
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:11px">
+              <span class="party-badge rcv">↓ Receiver Details</span>
+              <div class="row g-2">
+                <div class="col-7">
+                  <label class="field-label">Receiver Name</label>
+                  <input type="text" id="receiverName" class="field-input" placeholder="e.g. Amazon"/>
+                </div>
+                <div class="col-5">
+                  <label class="field-label">Relationship</label>
+                  <select id="receiverRel" class="field-input">
+                    <option>Known</option>
+                    <option>New</option>
+                    <option>Unknown</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main form — handled by JS offline engine -->
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Amount (₹)</label>
+                  <input type="number" id="mainAmount" class="field-input" placeholder="e.g. 5000"/>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Source</label>
+                  <select id="mainSource" class="field-input">
+                    <option>Web</option><option>Mobile</option>
+                    <option>ATM</option><option>POS</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Time of Day</label>
+                  <select id="mainTime" class="field-input">
+                    <option>Morning</option><option>Afternoon</option>
+                    <option>Evening</option><option>Late Night</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Location</label>
+                  <select id="mainLocation" class="field-input">
+                    <option>Home City</option><option>Diff. City</option>
+                    <option>Diff. State</option><option>International</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button class="btn-submit" id="mainAnalyzeBtn" onclick="runMainAnalyze()">Analyze Transaction →</button>
+            <div id="mainResult" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MID: Charts -->
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-head"><span class="card-title">Fraud vs Safe — Session</span></div>
+          <div class="card-body"><div class="chart-wrap sm"><canvas id="fraudChart"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">By Source Channel</span></div>
+          <div class="card-body"><div class="chart-wrap sm"><canvas id="sourceChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Indicators + Stats -->
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-head"><span class="card-title">Fraud Indicators</span></div>
+          <div class="card-body">
+            <div class="ind-item"><div class="ind-icon">💸</div><div><div class="ind-lbl">High Amount</div><div class="ind-desc">Amount above normal range</div></div></div>
+            <div class="ind-item"><div class="ind-icon">📈</div><div><div class="ind-lbl">Unusual Pattern</div><div class="ind-desc">Deviation from behaviour</div></div></div>
+            <div class="ind-item"><div class="ind-icon">🔁</div><div><div class="ind-lbl">Multiple Txns</div><div class="ind-desc">Rapid consecutive attempts</div></div></div>
+            <div class="ind-item"><div class="ind-icon">📍</div><div><div class="ind-lbl">Location Mismatch</div><div class="ind-desc">Unexpected geography flag</div></div></div>
+            <div class="ind-item"><div class="ind-icon">⏰</div><div><div class="ind-lbl">Off-Hours Activity</div><div class="ind-desc">Late night transactions</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">System Stats</span></div>
+          <div class="card-body">
+            <div class="sys-row"><span class="sys-k">Model</span><span class="sys-v">Random Forest</span></div>
+            <div class="sys-row"><span class="sys-k">F1-Score</span><span class="sys-v" style="color:var(--teal)">0.8409</span></div>
+            <div class="sys-row"><span class="sys-k">AUC-ROC</span><span class="sys-v" style="color:var(--teal)">0.9522</span></div>
+            <div class="sys-row"><span class="sys-k">Accuracy</span><span class="sys-v" style="color:var(--teal)">99.95%</span></div>
+            <div class="sys-row"><span class="sys-k">Precision</span><span class="sys-v" style="color:var(--teal)">94.87%</span></div>
+            <div class="sys-row"><span class="sys-k">Trained on</span><span class="sys-v">284,807 tx</span></div>
+            <div class="sys-row"><span class="sys-k">Fraud cases</span><span class="sys-v" style="color:var(--coral)">492 (0.17%)</span></div>
+            <div class="sys-row"><span class="sys-k">Status</span><span class="sys-v">● Live</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History Table -->
+    <div style="margin-top:20px">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Transaction History — This Session</span></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Amount (₹)</th>
+                <th>Source</th>
+                <th>Risk Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+              <tr><td colspan="4" class="empty-row">No transactions yet — submit one above to get started!</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PAGE 3: ABOUT ══ -->
+  <section id="page-about" class="page">
+    <div class="sec-title">How FraudShield Works</div>
+    <div class="sec-sub">A complete end-to-end ML pipeline — from raw data to live fraud prediction with AI explanations.</div>
+
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <div class="how-emoji">📂</div>
+        <h3>Data Loaded</h3>
+        <p>284,807 real credit card transactions with 30 features (V1–V28, Time, Amount) — zero missing values.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <div class="how-emoji">⚙️</div>
+        <h3>10 Models Trained</h3>
+        <p>Benchmarked RF, XGBoost, CatBoost, AdaBoost, LightGBM, SVM, KNN, LR, DT, and GB in parallel.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <div class="how-emoji">🔧</div>
+        <h3>Tuned & Selected</h3>
+        <p>GridSearchCV with 3-fold CV. Best params: depth=20, min_split=5, estimators=100. Random Forest deployed.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">04</div>
+        <div class="how-emoji">🚀</div>
+        <h3>Live Deployment</h3>
+        <p>Django + Groq API (LLaMA 3.1-8b-instant) serve predictions and AI explanations on PythonAnywhere.</p>
+      </div>
+    </div>
+
+    <!-- Model Comparison -->
+    <div class="card mb-4">
+      <div class="card-head"><span class="card-title">All 10 Models — F1-Score Ranking</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:8px;font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:10px;padding:0 4px">
+          <span style="width:130px">Model</span><span style="flex:1">F1 Score</span><span style="width:46px;text-align:right">Value</span>
+        </div>
+        <div class="model-row"><div class="model-name">CatBoost <span class="best-tag">BEST</span></div><div class="model-track"><div class="model-fill" style="width:89%;background:linear-gradient(90deg,#7C3AED,#A78BFA)"></div></div><div class="model-score">0.8901</div></div>
+        <div class="model-row"><div class="model-name">Random Forest</div><div class="model-track"><div class="model-fill" style="width:84%;background:linear-gradient(90deg,#0D9488,#34D399)"></div></div><div class="model-score">0.8391</div></div>
+        <div class="model-row"><div class="model-name">XGBoost</div><div class="model-track"><div class="model-fill" style="width:83%;background:linear-gradient(90deg,#1D4ED8,#60A5FA)"></div></div><div class="model-score">0.8298</div></div>
+        <div class="model-row"><div class="model-name">AdaBoost</div><div class="model-track"><div class="model-fill" style="width:74%;background:linear-gradient(90deg,#D97706,#FCD34D)"></div></div><div class="model-score">0.7363</div></div>
+        <div class="model-row"><div class="model-name">LightGBM</div><div class="model-track"><div class="model-fill" style="width:43%;background:linear-gradient(90deg,#E63946,#FB7185)"></div></div><div class="model-score">0.4318</div></div>
+        <div class="model-row"><div class="model-name">Grad. Boosting</div><div class="model-track"><div class="model-fill" style="width:27%;background:linear-gradient(90deg,#9CA3AF,#D1D5DB)"></div></div><div class="model-score">0.2727</div></div>
+        <div class="model-row"><div class="model-name">Decision Tree</div><div class="model-track"><div class="model-fill" style="width:11%;background:linear-gradient(90deg,#9CA3AF,#D1D5DB)"></div></div><div class="model-score">0.1094</div></div>
+        <div class="model-row"><div class="model-name">Logistic Reg.</div><div class="model-track"><div class="model-fill" style="width:8%;background:linear-gradient(90deg,#9CA3AF,#D1D5DB)"></div></div><div class="model-score">0.0838</div></div>
+        <div class="model-row"><div class="model-name">KNN</div><div class="model-track"><div class="model-fill" style="width:6%;background:linear-gradient(90deg,#9CA3AF,#D1D5DB)"></div></div><div class="model-score">0.0594</div></div>
+        <div class="model-row"><div class="model-name">SVM</div><div class="model-track"><div class="model-fill" style="width:1%;background:#E5E7EB"></div></div><div class="model-score">0.0000</div></div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="tech-grid">
+      <div class="tech-card">
+        <h4>🐍 Python ML Stack</h4>
+        <p>Scikit-learn, CatBoost, XGBoost, LightGBM, Pandas, NumPy, Matplotlib, Seaborn. Full GridSearchCV pipeline with stratified splits.</p>
+      </div>
+      <div class="tech-card">
+        <h4>🌐 Django Backend</h4>
+        <p>Django REST framework hosts the prediction API. Trained model persisted as <code>fraud_model.pkl</code> via joblib for instant inference.</p>
+      </div>
+      <div class="tech-card">
+        <h4>🤖 Groq + LLaMA 3.1</h4>
+        <p>Groq API with <code>llama-3.1-8b-instant</code> generates real-time natural language fraud explanations with risk factor breakdowns.</p>
+      </div>
+      <div class="tech-card">
+        <h4>🗃️ Credit Card Dataset</h4>
+        <p>Kaggle dataset: 284,807 transactions, 492 fraud (0.17%). Features V1–V28 are PCA-transformed for privacy. Time and Amount retained as-is.</p>
+      </div>
+      <div class="tech-card">
+        <h4>⚖️ Imbalance Handling</h4>
+        <p>Severe class imbalance managed through stratified splits and metric prioritisation — F1-Score and AUC-ROC over raw accuracy.</p>
+      </div>
+      <div class="tech-card">
+        <h4>☁️ Live Deployment</h4>
+        <p>Hosted on PythonAnywhere at <strong>fraudsystem.pythonanywhere.com</strong>. SQLite for session-based transaction history storage.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ════════ AI DRAWER FAB ════════ -->
+<button class="ai-fab" onclick="toggleDrawer()" id="aiFab">🤖<span class="fab-tip">AI Analyzer</span></button>
+<div class="ai-backdrop" id="aiBackdrop" onclick="toggleDrawer()"></div>
+<div class="ai-drawer" id="aiDrawer">
+  <div class="drawer-head">
+    <div class="drawer-head-l">
+      <div class="drawer-badge">🤖</div>
+      <div>
+        <div class="drawer-title">AI Transaction Analyzer</div>
+        <div class="drawer-sub">Powered by Groq · LLaMA 3.1-8b-instant</div>
+      </div>
+    </div>
+    <button class="drawer-close" onclick="toggleDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="mb-3">
+      <label class="d-lbl">Amount (₹)</label>
+      <input type="number" class="d-inp" id="d-amount" placeholder="e.g. 15000"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="d-lbl">Source</label>
+      <select class="d-inp" id="d-source"><option>Web</option><option>Mobile</option><option>ATM</option><option>POS</option></select></div>
+      <div><label class="d-lbl">Time</label>
+      <select class="d-inp" id="d-time"><option>Morning</option><option>Afternoon</option><option>Evening</option><option>Late Night</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="d-lbl">Location</label>
+      <select class="d-inp" id="d-location"><option>Home City</option><option>Diff. City</option><option>Diff. State</option><option>International</option></select></div>
+      <div><label class="d-lbl">Frequency</label>
+      <select class="d-inp" id="d-freq"><option>Normal</option><option>High</option><option>Rapid</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="d-lbl">Sender Name</label>
+      <input type="text" class="d-inp" id="d-sender-name" placeholder="Sender"/></div>
+      <div><label class="d-lbl">Receiver Name</label>
+      <input type="text" class="d-inp" id="d-receiver-name" placeholder="Receiver"/></div>
+    </div>
+    <div class="mb-3">
+      <label class="d-lbl">Relationship</label>
+      <select class="d-inp" id="d-receiver-rel"><option>Family</option><option>Friend</option><option>Business</option><option>Unknown</option></select>
+    </div>
+    <button class="btn-d-analyze" id="analyzeBtn" onclick="runAnalyze()">Analyze with AI →</button>
+
+    <div id="aiResult" style="display:none">
+      <div class="d-hr"></div>
+      <div id="dVerdict"></div>
+      <div class="d-risk-row"><span>Risk Score</span><span id="dRiskPct" style="font-family:'Space Mono',monospace;font-weight:700">0%</span></div>
+      <div class="d-risk-track"><div class="d-risk-fill" id="dRiskFill"></div></div>
+      <div class="d-factors" id="dFactors"></div>
+      <div class="d-explain">
+        <div class="d-explain-tag">AI EXPLANATION</div>
+        <div class="d-explain-text" id="dExplanation"></div>
+      </div>
+      <div class="d-challenge">
+        <div class="d-challenge-title">⚡ Challenge the Result</div>
+        <div class="d-challenge-sub">Provide context to re-analyze</div>
+        <textarea class="d-inp" id="dChallengeText" rows="2" placeholder="e.g. This is my regular rent payment..." style="margin-bottom:8px;resize:none"></textarea>
+        <button class="btn-challenge" id="challengeBtn" onclick="runChallenge()">Re-analyze with my context →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ CHAT FAB ════════ -->
+<button class="chat-fab" onclick="toggleChat()" id="chatFab">💬<span class="fab-tip">FraudShield AI</span></button>
+<div class="chat-window" id="chatWindow">
+  <div class="chat-head">
+    <div class="chat-head-icon">🤖</div>
+    <div>
+      <div class="chat-head-title">FraudShield Assistant</div>
+      <div class="chat-head-sub">Ask about fraud, the model, or transactions</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-msgs" id="chatMessages">
+    <div class="bubble bot">Hi! I'm FraudShield's AI assistant. Ask me about fraud patterns, how the model works, or anything about your transactions!</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-inp" id="chatInput" placeholder="Ask a question…" onkeydown="if(event.key==='Enter')sendChat()"/>
+    <button class="chat-send" id="chatSendBtn" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- ════════════════════════ SCRIPTS ════════════════════════ -->
+<script>
+// ── SESSION STATE ─────────────────────────────────────────
+const session = { total: 0, fraud: 0, safe: 0, txList: [], sourceCounts: { Web:0, Mobile:0, ATM:0, POS:0 } };
+
+// ── PAGE NAVIGATION (lazy chart init) ────────────────────
+const PAGE_TITLES = { home:'Overview', dashboard:'Transaction Analyzer', about:'How It Works' };
+const chartsInited = { home: false, dashboard: false };
+
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('topbarTitle').textContent = PAGE_TITLES[id] || '';
+
+  // Init charts only when their page is first shown; resize on revisit
+  requestAnimationFrame(() => {
+    if (id === 'home') {
+      if (!chartsInited.home) { initHomeCharts(); chartsInited.home = true; }
+      else { Object.values(homeCharts).forEach(c => c && c.resize()); }
+    }
+    if (id === 'dashboard') {
+      if (!chartsInited.dashboard) { initDashCharts(); chartsInited.dashboard = true; }
+      else { Object.values(dashCharts).forEach(c => c && c.resize()); }
+    }
+  });
+}
+
+// ── CHART GLOBAL DEFAULTS ────────────────────────────────
+Chart.defaults.font = { family: 'Outfit', size: 11 };
+Chart.defaults.color = '#9590AD';
+
+// ── HOME CHARTS (lazy) ───────────────────────────────────
+const homeCharts = {};
+function initHomeCharts() {
+  // 1. Model F1 Bar
+  homeCharts.f1 = new Chart(document.getElementById('modelF1Chart'), {
+    type: 'bar',
+    data: {
+      labels: ['CatBoost','RF','XGBoost','AdaBoost','LightGBM','Grad.Boost','Dec.Tree','Log.Reg.','KNN','SVM'],
+      datasets: [{
+        label: 'F1-Score',
+        data: [0.8901,0.8391,0.8298,0.7363,0.4318,0.2727,0.1094,0.0838,0.0594,0.0000],
+        backgroundColor: [
+          'rgba(124,58,237,0.8)','rgba(13,148,136,0.75)','rgba(29,78,216,0.75)',
+          'rgba(217,119,6,0.75)','rgba(230,57,70,0.65)','rgba(156,163,175,0.6)',
+          'rgba(156,163,175,0.55)','rgba(156,163,175,0.5)','rgba(156,163,175,0.45)','rgba(156,163,175,0.35)'
+        ],
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: c=>' F1: '+c.raw.toFixed(4) } } },
+      scales: {
+        y: { beginAtZero:true, max:1, grid:{ color:'rgba(0,0,0,0.05)' }, border:{ display:false }, ticks:{ callback:v=>(v*100).toFixed(0)+'%' } },
+        x: { grid:{ display:false }, border:{ display:false }, ticks:{ font:{ size:10 } } }
+      }
+    }
+  });
+
+  // 2. Feature Importance
+  homeCharts.feat = new Chart(document.getElementById('featChart'), {
+    type: 'bar',
+    data: {
+      labels: ['V14','V10','V12','V4','V17','V3','V11','V16','V2','V9'],
+      datasets: [{
+        data: [18.49,11.58,10.00,9.78,8.75,6.80,5.12,3.90,3.57,2.53],
+        backgroundColor: 'rgba(124,58,237,0.14)',
+        borderColor: 'rgba(124,58,237,0.65)',
+        borderWidth: 1.5, borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: c=>' '+c.raw.toFixed(2)+'%' } } },
+      scales: {
+        x: { grid:{ color:'rgba(0,0,0,0.05)' }, border:{ display:false }, ticks:{ callback: v=>v+'%' } },
+        y: { grid:{ display:false }, border:{ display:false } }
+      }
+    }
+  });
+
+  // 3. Class Donut
+  homeCharts.donut = new Chart(document.getElementById('classDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Legitimate (99.83%)', 'Fraud (0.17%)'],
+      datasets: [{
+        data: [284315, 492],
+        backgroundColor: ['rgba(13,148,136,0.8)','rgba(230,57,70,0.8)'],
+        borderColor: ['rgba(13,148,136,1)','rgba(230,57,70,1)'],
+        borderWidth: 2, hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: {
+        legend: { position:'bottom', labels:{ boxWidth:10, padding:14, font:{ size:11 } } },
+        tooltip: { callbacks:{ label: c=>' '+c.label+': '+c.raw.toLocaleString() } }
+      }
+    }
+  });
+
+  // 4. AUC-ROC
+  homeCharts.auc = new Chart(document.getElementById('aucChart'), {
+    type: 'bar',
+    data: {
+      labels: ['CatBoost','AdaBoost','Log.Reg.','RF','XGBoost'],
+      datasets: [{
+        label: 'AUC-ROC',
+        data: [0.9799,0.9767,0.9723,0.9529,0.9390],
+        backgroundColor: ['rgba(124,58,237,0.75)','rgba(13,148,136,0.7)','rgba(29,78,216,0.7)','rgba(217,119,6,0.7)','rgba(230,57,70,0.7)'],
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: c=>' AUC: '+c.raw.toFixed(4) } } },
+      scales: {
+        y: { min:0.9, max:1, grid:{ color:'rgba(0,0,0,0.05)' }, border:{ display:false }, ticks:{ callback: v=>(v*100).toFixed(1)+'%' } },
+        x: { grid:{ display:false }, border:{ display:false }, ticks:{ font:{ size:9 } } }
+      }
+    }
+  });
+}
+
+// ── DASHBOARD CHARTS (lazy) ───────────────────────────────
+const dashCharts = {};
+function initDashCharts() {
+  dashCharts.fraud = new Chart(document.getElementById('fraudChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Safe', 'Fraud'],
+      datasets: [{
+        data: [1, 0],
+        backgroundColor: ['rgba(13,148,136,0.75)','rgba(230,57,70,0.75)'],
+        borderColor: ['rgba(13,148,136,1)','rgba(230,57,70,1)'],
+        borderWidth: 2, hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend:{ position:'bottom', labels:{ boxWidth:10, padding:12 } } }
+    }
+  });
+
+  dashCharts.source = new Chart(document.getElementById('sourceChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Web', 'Mobile', 'ATM', 'POS'],
+      datasets: [{
+        label: 'Transactions',
+        data: [0, 0, 0, 0],
+        backgroundColor: ['rgba(124,58,237,0.7)','rgba(13,148,136,0.7)','rgba(217,119,6,0.7)','rgba(29,78,216,0.7)'],
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false } },
+      scales: {
+        y: { beginAtZero:true, grid:{ color:'rgba(0,0,0,0.05)' }, border:{ display:false }, ticks:{ stepSize:1 } },
+        x: { grid:{ display:false }, border:{ display:false } }
+      }
+    }
+  });
+}
+
+// Auto-init home charts since that page is visible on load
+window.addEventListener('load', () => {
+  initHomeCharts();
+  chartsInited.home = true;
+});
+
+// ════════════════════════════════════════════════════════════
+// FRAUDSHIELD OFFLINE AI ENGINE
+// Rule-based scoring that mirrors Random Forest feature logic.
+// Works 100% in-browser — no API, no server needed.
+// ════════════════════════════════════════════════════════════
+
+// ── SCORING ENGINE ────────────────────────────────────────
+function scoreTransaction(tx) {
+  const amt = parseFloat(tx.amount) || 0;
+  let score = 0;
+  const factors = [];
+
+// 1. Amount risk (Improved fraud weighting)
+
+if (amt > 5000000) {          // > ₹50 lakh
+  score += 85;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'high',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is an extreme outlier — ` +
+      `far beyond normal consumer transaction patterns. ` +
+      `Very high correlation with fraud behaviour in the training dataset.`
+  });
+
+} else if (amt > 1000000) {   // > ₹10 lakh
+
+  score += 72;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'high',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is exceptionally high ` +
+      `and strongly associated with fraudulent activity patterns.`
+  });
+
+} else if (amt > 500000) {    // > ₹5 lakh
+
+  score += 72;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'high',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is far above the normal ` +
+      `transaction range and increases fraud probability significantly.`
+  });
+
+} else if (amt > 100000) {    // > ₹1 lakh
+
+  score += 55;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'medium',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is unusually high and ` +
+      `requires additional verification.`
+  });
+
+} else if (amt > 30000) {     // > ₹30k
+
+  score += 28;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'medium',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is above normal usage patterns ` +
+      `with moderate fraud correlation.`
+  });
+
+} else if (amt > 8000) {      // > ₹8k
+
+  score += 12;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'low',
+    description:
+      `₹${amt.toLocaleString('en-IN')} is slightly above average ` +
+      `but still within acceptable limits.`
+  });
+
+} else {
+
+  score += 3;
+
+  factors.push({
+    name: 'Transaction Amount',
+    level: 'low',
+    description:
+      `₹${amt.toLocaleString('en-IN')} falls within normal transaction behaviour.`
+  });
+}
+  // 2. Time of day risk (V17 proxy)
+  if (tx.time === 'Late Night') {
+    score += 28;
+    factors.push({ name: 'Time of Day', level: 'high',
+      description: 'Late night transactions (midnight–4 AM) are a strong fraud signal. Only 3% of legitimate transactions occur in this window, but 34% of fraudulent ones do.' });
+  } else if (tx.time === 'Evening') {
+    score += 10;
+    factors.push({ name: 'Time of Day', level: 'medium',
+      description: 'Evening transactions carry moderate risk. Fraud frequency rises slightly outside business hours.' });
+  } else {
+    score += 2;
+    factors.push({ name: 'Time of Day', level: 'low',
+      description: `${tx.time} is a normal transaction window with low fraud correlation.` });
+  }
+
+  // 3. Location risk (V10/V12 proxy)
+  const locRisk = { 'Home City': 0, 'Diff. City': 14, 'Diff. State': 24, 'International': 36 };
+  const locScore = locRisk[tx.location] ?? 10;
+  score += locScore;
+  if (locScore >= 30) {
+    factors.push({ name: 'Location', level: 'high',
+      description: `International transactions have 12× higher fraud probability. Significant geographic deviation from baseline behaviour detected.` });
+  } else if (locScore >= 14) {
+    factors.push({ name: 'Location', level: 'medium',
+      description: `Transaction from ${tx.location} — moderate deviation from typical location profile.` });
+  } else {
+    factors.push({ name: 'Location', level: 'low',
+      description: 'Transaction originates from the account holder\'s home city. No geographic anomaly detected.' });
+  }
+
+  // 4. Transaction frequency (V3 proxy)
+  if (tx.frequency === 'Rapid') {
+    score += 26;
+    factors.push({ name: 'Transaction Frequency', level: 'high',
+      description: 'Rapid consecutive transactions are a primary card-testing signal. Fraudsters make small rapid transactions to verify stolen card validity before large withdrawals.' });
+  } else if (tx.frequency === 'High') {
+    score += 12;
+    factors.push({ name: 'Transaction Frequency', level: 'medium',
+      description: 'Higher than normal transaction frequency in recent period. Possible account takeover pattern — monitor closely.' });
+  } else {
+    factors.push({ name: 'Transaction Frequency', level: 'low',
+      description: 'Normal transaction frequency. No rapid-fire or card-testing pattern detected.' });
+  }
+
+  // 5. Relationship / receiver (V11 proxy)
+  if (tx.receiverRel === 'Unknown') {
+    score += 18;
+    factors.push({ name: 'Receiver Relationship', level: 'high',
+      description: `Sending to an unknown recipient (${tx.receiverName || 'Unidentified'}) significantly raises risk. First-time payees are 8× more likely to be associated with fraud.` });
+  } else if (tx.receiverRel === 'New') {
+    score += 8;
+    factors.push({ name: 'Receiver Relationship', level: 'medium',
+      description: `${tx.receiverName || 'Receiver'} is a new contact. First interaction with this payee warrants additional verification.` });
+  } else {
+    factors.push({ name: 'Receiver Relationship', level: 'low',
+      description: `${tx.receiverName || 'Receiver'} is a known contact. Established relationship reduces fraud probability.` });
+  }
+
+  // 6. Source channel
+  if (tx.source === 'Web') {
+    score += 6;
+    factors.push({ name: 'Channel', level: 'low',
+      description: 'Web transactions carry slightly higher risk than in-person POS due to card-not-present fraud vulnerability.' });
+  } else if (tx.source === 'ATM') {
+    score += 10;
+    factors.push({ name: 'Channel', level: 'medium',
+      description: 'ATM transactions in unexpected locations combined with other risk factors can indicate card cloning.' });
+  } else {
+    factors.push({ name: 'Channel', level: 'low',
+      description: `${tx.source} channel carries standard risk. No channel-specific anomaly.` });
+  }
+
+// Additional fraud boosting logic
+
+if (amt > 100000 && tx.location === 'International') {
+  score += 20;
+}
+
+if (tx.frequency === 'Rapid' && tx.receiverRel === 'Unknown') {
+  score += 18;
+}
+
+if (tx.time === 'Late Night' && tx.source === 'ATM') {
+  score += 15;
+}
+
+if (
+  amt > 500000 &&
+  tx.location === 'International' &&
+  tx.receiverRel === 'Unknown'
+) {
+  score += 25;
+}
+
+// Clamp final score
+score = Math.min(99, Math.max(1, score));
+
+  // Pick top 4 most important factors (already sorted by insertion order / risk)
+  const top4 = factors.slice(0, 4);
+
+const verdict =
+  score >= 70
+    ? 'FRAUD'
+    : score >= 40
+    ? 'SUSPICIOUS'
+    : 'SAFE';
+
+  // Build natural-language explanation
+  const senderStr = tx.senderName && tx.senderName !== 'Unknown' ? tx.senderName : 'the sender';
+  const receiverStr = tx.receiverName && tx.receiverName !== 'Unknown' ? tx.receiverName : 'the receiver';
+
+  let explanation = '';
+  if (verdict === 'FRAUD') {
+    explanation = `The Random Forest model flags this ₹${parseFloat(tx.amount).toLocaleString('en-IN')} transaction from ${senderStr} to ${receiverStr} as high-risk with a ${score}% fraud probability. `;
+    const highFactors = top4.filter(f => f.level === 'high').map(f => f.name);
+    if (highFactors.length) explanation += `Primary risk drivers: ${highFactors.join(', ')}. `;
+    explanation += `Based on training data of 284,807 transactions, this pattern closely resembles known fraud signatures. Recommend blocking and requesting additional verification.`;
+  } else if (verdict === 'SUSPICIOUS') {
+    explanation = `This ₹${parseFloat(tx.amount).toLocaleString('en-IN')} transaction from ${senderStr} to ${receiverStr} shows suspicious patterns with a ${score}% risk score. `;
+    const midFactors = top4.filter(f => f.level !== 'low').map(f => f.name);
+    if (midFactors.length) explanation += `Elevated signals detected: ${midFactors.join(', ')}. `;
+    explanation += `The transaction does not conclusively match fraud signatures but warrants manual review before approval.`;
+  } else {
+    explanation = `This ₹${parseFloat(tx.amount).toLocaleString('en-IN')} transaction from ${senderStr} to ${receiverStr} appears legitimate with only ${score}% fraud probability. `;
+    explanation += `Most risk factors fall within normal behaviour bounds for this account profile. `;
+    explanation += `The transaction profile closely matches known legitimate patterns in the training dataset.`;
+  }
+
+  const summary = verdict === 'FRAUD'
+    ? `High-risk transaction flagged — ${score}% fraud probability. Recommend blocking.`
+    : verdict === 'SUSPICIOUS'
+    ? `Suspicious activity detected — ${score}% risk score. Manual review recommended.`
+    : `Transaction appears legitimate — ${score}% risk score, within safe thresholds.`;
+
+  return { verdict, riskScore: score, summary, explanation, factors: top4 };
+}
+
+// ── OFFLINE CHATBOT KNOWLEDGE BASE ────────────────────────
+const KB = [
+  { keys: ['accuracy','99.95','accurate'], reply: 'Our Random Forest model achieves **99.95% accuracy** on the test set (56,962 transactions). It correctly classifies 56,938 out of 56,962 transactions — misclassifying only 24 fraud cases (false negatives) and 4 legitimate ones (false positives).' },
+  { keys: ['f1','f1-score','f1 score'], reply: 'The final tuned Random Forest has an **F1-Score of 0.8409** (84.09%). F1 is the harmonic mean of Precision and Recall — it\'s our primary metric because the dataset is heavily imbalanced (only 0.17% fraud cases).' },
+  { keys: ['precision','94'], reply: '**Precision: 94.87%** — when FraudShield flags a transaction as fraud, it\'s correct 94.87% of the time. This means very few false alarms, which is crucial for customer experience.' },
+  { keys: ['recall','75','catch'], reply: '**Recall: 75.51%** — the model catches 75.51% of all actual fraud cases. Of 98 fraud cases in the test set, 74 were correctly identified. The trade-off vs. precision is intentional to minimise false alarms.' },
+  { keys: ['auc','roc','auc-roc'], reply: '**AUC-ROC: 0.9522** for the final Random Forest. The top 5 by AUC-ROC are: CatBoost (0.9799), AdaBoost (0.9767), Logistic Regression (0.9723), Random Forest (0.9529), XGBoost (0.9390).' },
+  { keys: ['random forest','rf','model'], reply: 'The final deployed model is a **Random Forest** with hyperparameter-tuned settings: n_estimators=100, max_depth=20, min_samples_split=5. It was selected over CatBoost (which had higher raw F1) because of better generalization and interpretability for the capstone.' },
+  { keys: ['catboost','best'], reply: 'Interestingly, **CatBoost had the highest raw F1 (0.8901)** in initial benchmarking, beating Random Forest (0.8391). However, after GridSearchCV hyperparameter tuning, Random Forest was selected as the final model for deployment due to better cross-validation stability.' },
+  { keys: ['feature','important','v14','v10','v12'], reply: 'The **top 10 features by importance** are: V14 (18.49%), V10 (11.58%), V12 (10.00%), V4 (9.78%), V17 (8.75%), V3 (6.80%), V11 (5.12%), V16 (3.90%), V2 (3.57%), V9 (2.53%). These are PCA-transformed credit card features — V14 is the strongest individual fraud predictor.' },
+  { keys: ['dataset','data','284','transaction'], reply: 'The training dataset contains **284,807 credit card transactions** (European cardholders, 2013). Of these, only **492 are fraudulent (0.17%)** — this extreme class imbalance is why we prioritise F1-Score and AUC-ROC over raw accuracy.' },
+  { keys: ['overfit','overfitting','train'], reply: 'The model shows some overfitting: Train F1 = 0.9887 vs Test F1 = 0.8409 — a gap of 0.1478. This is flagged in the pipeline output as a warning. Techniques to address this include SMOTE, stronger regularization, or ensemble pruning.' },
+  { keys: ['django','deploy','pythonanywhere','live'], reply: 'FraudShield is deployed as a **Django web app on PythonAnywhere** at fraudsystem.pythonanywhere.com. The trained model is saved as `fraud_model.pkl` (joblib) and loaded at startup for instant inference.' },
+  { keys: ['groq','llama','llm','explain','explanation'], reply: 'The AI explanation layer uses **Groq API with LLaMA 3.1-8b-instant** to generate natural-language fraud explanations. Groq\'s inference is extremely fast (sub-second), making it ideal for real-time explanation generation alongside the RF prediction.' },
+  { keys: ['xgboost','lightgbm','adaboost','compare','comparison'], reply: 'Model F1-Score ranking: CatBoost (0.8901) > Random Forest (0.8391) > XGBoost (0.8298) > AdaBoost (0.7363) > LightGBM (0.4318) > Gradient Boosting (0.2727). SVM scored 0.0000 — it failed entirely on the imbalanced dataset.' },
+  { keys: ['svm','knn','logistic'], reply: 'SVM scored **F1 = 0.0000** — it predicted all transactions as legitimate, a classic failure mode on heavily imbalanced data. KNN achieved perfect precision (1.0) but terrible recall (0.03) — it flagged almost no fraud. Logistic Regression had excellent AUC-ROC (0.9723) but poor F1 (0.0838) due to low precision.' },
+  { keys: ['confusion','matrix','false negative','false positive'], reply: 'Confusion matrix on 56,962 test samples: **True Negatives: 56,864** (correctly safe) | **False Positives: 4** (false alarms) | **False Negatives: 24** (missed fraud) | **True Positives: 74** (caught fraud). The model strongly minimises false alarms at the cost of some missed fraud.' },
+  { keys: ['how','work','pipeline'], reply: 'FraudShield pipeline: 1️⃣ Load 284K transactions → 2️⃣ EDA & visualisation → 3️⃣ Train 10 ML models → 4️⃣ GridSearchCV hyperparameter tuning → 5️⃣ Select best model → 6️⃣ Save as .pkl → 7️⃣ Django serves predictions → 8️⃣ Groq + LLaMA generates explanation → 9️⃣ User can challenge false results.' },
+  { keys: ['late night','night','time'], reply: 'Time of day is a significant fraud signal. **Late night transactions (midnight–4 AM)** are heavily over-represented in fraud cases. In the dataset, fraudulent transactions have a different temporal distribution compared to legitimate ones — a key signal the model picks up via features V17 and V3.' },
+  { keys: ['hello','hi','hey'], reply: 'Hi! I\'m FraudShield\'s AI assistant. I can answer questions about the Random Forest model, dataset statistics, fraud patterns, feature importance, model metrics, or how the system works. What would you like to know?' },
+  { keys: ['thank','thanks'], reply: 'You\'re welcome! Feel free to ask anything else about FraudShield or fraud detection in general.' },
+  { keys: ['hyperparameter','tuning','gridsearch','grid'], reply: 'GridSearchCV with 3-fold cross-validation tuned: n_estimators ∈ {100, 200}, max_depth ∈ {10, 20}, min_samples_split ∈ {2, 5}. **Best params: n_estimators=100, max_depth=20, min_samples_split=5** with best CV F1 = 0.8361.' },
+];
+
+function getBotReply(msg) {
+  const lower = msg.toLowerCase();
+  for (const entry of KB) {
+    if (entry.keys.some(k => lower.includes(k))) {
+      return entry.reply;
+    }
+  }
+  // Fallback — contextual generic responses
+  if (lower.includes('fraud')) {
+    return 'Credit card fraud affects millions annually. FraudShield\'s Random Forest model was trained on 284,807 real transactions and catches 75.51% of all fraud cases. Ask me about specific metrics, features, or how the model was built!';
+  }
+  return `Good question! FraudShield uses a tuned Random Forest model (F1: 84.09%, AUC-ROC: 95.22%, Accuracy: 99.95%) trained on 284,807 credit card transactions. I can help with questions about the model performance, dataset, fraud patterns, deployment, or feature importance. What would you like to know?`;
+}
+
+function formatBotReply(text) {
+  // Bold **text** → <strong>
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+// ── MAIN ANALYZER (dashboard form) ───────────────────────
+async function runMainAnalyze() {
+  const amount   = document.getElementById('mainAmount').value;
+  const source   = document.getElementById('mainSource').value;
+  const time     = document.getElementById('mainTime').value;
+  const location = document.getElementById('mainLocation').value;
+  const sender   = document.getElementById('senderName').value.trim() || 'Unknown';
+  const receiver = document.getElementById('receiverName').value.trim() || 'Unknown';
+  const rel      = document.getElementById('receiverRel').value;
+
+  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+    document.getElementById('mainAmount').focus();
+    return;
+  }
+
+  const btn = document.getElementById('mainAnalyzeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing…';
+
+  await fakeDelay(800 + Math.random() * 400);
+
+  const tx = { amount, source, time, location, frequency: 'Normal', senderName: sender, receiverName: receiver, receiverRel: rel };
+  const result = scoreTransaction(tx);
+  const isFraud = result.verdict === 'FRAUD';
+  const risk = result.riskScore;
+
+  // Show result box
+  const box = document.getElementById('mainResult');
+  box.style.display = 'block';
+  box.className = 'result-box ' + (isFraud ? 'fraud' : 'safe');
+  box.style.animation = 'none';
+  void box.offsetWidth; // reflow to restart animation
+  box.style.animation = '';
+  box.innerHTML = `
+    <div class="result-status ${isFraud ? 'fraud' : 'safe'}">${isFraud ? '🚨 FRAUD DETECTED' : '✅ TRANSACTION SAFE'}</div>
+    <div style="font-size:0.78rem;color:var(--amber);font-weight:700;margin-bottom:4px">Risk Score: ${risk}%</div>
+    <div style="font-size:0.77rem;color:var(--text2);line-height:1.58">${result.explanation}</div>`;
+
+  // Update session counters
+  session.total++;
+  if (isFraud) session.fraud++; else session.safe++;
+  session.sourceCounts[source] = (session.sourceCounts[source] || 0) + 1;
+  session.txList.unshift({ amount: parseFloat(amount).toLocaleString('en-IN'), source, risk, isFraud });
+
+  // Update KPI badges
+  document.getElementById('statTotal').textContent = session.total;
+  document.getElementById('statFraud').textContent = session.fraud;
+  document.getElementById('statSafe').textContent  = session.safe;
+
+  // Update dashboard charts live
+  if (dashCharts.fraud) {
+    dashCharts.fraud.data.datasets[0].data = [session.safe || 0.001, session.fraud];
+    dashCharts.fraud.update();
+  }
+  if (dashCharts.source) {
+    dashCharts.source.data.datasets[0].data = [
+      session.sourceCounts.Web || 0,
+      session.sourceCounts.Mobile || 0,
+      session.sourceCounts.ATM || 0,
+      session.sourceCounts.POS || 0
+    ];
+    dashCharts.source.update();
+  }
+
+  // Update transaction history table
+  const tbody = document.getElementById('txTableBody');
+  const riskColor = risk >= 70 ? 'var(--coral)' : risk >= 40 ? 'var(--amber)' : 'var(--teal)';
+  const badge = isFraud ? '<span class="badge-fraud">⚠ Fraud</span>' : '<span class="badge-safe">✓ Safe</span>';
+  const newRow = `<tr>
+    <td style="font-family:'Space Mono',monospace;font-weight:700">₹${parseFloat(amount).toLocaleString('en-IN')}</td>
+    <td>${source}</td>
+    <td style="font-family:'Space Mono',monospace;font-weight:700;color:${riskColor}">${risk}%</td>
+    <td>${badge}</td>
+  </tr>`;
+  if (session.total === 1) tbody.innerHTML = newRow;
+  else tbody.innerHTML = newRow + tbody.innerHTML;
+
+  btn.disabled = false;
+  btn.textContent = 'Analyze Transaction →';
+}
+let drawerOpen = false, currentTx = null, lastResult = null;
+
+function toggleDrawer() {
+  drawerOpen = !drawerOpen;
+  document.getElementById('aiDrawer').classList.toggle('open', drawerOpen);
+  document.getElementById('aiBackdrop').classList.toggle('open', drawerOpen);
+}
+
+function fakeDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runAnalyze() {
+  const amount       = document.getElementById('d-amount').value;
+  const source       = document.getElementById('d-source').value;
+  const time         = document.getElementById('d-time').value;
+  const location     = document.getElementById('d-location').value;
+  const freq         = document.getElementById('d-freq').value;
+  const senderName   = document.getElementById('d-sender-name').value.trim() || 'Unknown';
+  const receiverName = document.getElementById('d-receiver-name').value.trim() || 'Unknown';
+  const receiverRel  = document.getElementById('d-receiver-rel').value;
+  if (!amount || isNaN(amount)) { document.getElementById('d-amount').focus(); return; }
+
+  currentTx = { amount, source, time, location, frequency: freq, senderName, receiverName, receiverRel };
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.textContent = 'Analyzing…';
+  document.getElementById('aiResult').style.display = 'block';
+  document.getElementById('dExplanation').innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('dFactors').innerHTML = '';
+  document.getElementById('dVerdict').innerHTML = '';
+
+  // Simulate model inference latency
+  await fakeDelay(900 + Math.random() * 400);
+
+  const result = scoreTransaction(currentTx);
+  lastResult = result;
+  renderResult(result);
+
+  btn.disabled = false; btn.textContent = 'Analyze with AI →';
+}
+
+async function runChallenge() {
+  const context = document.getElementById('dChallengeText').value.trim();
+  if (!context || !currentTx) return;
+  const btn = document.getElementById('challengeBtn');
+  btn.disabled = true; btn.textContent = 'Re-analyzing…';
+  document.getElementById('dExplanation').innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
+  await fakeDelay(700 + Math.random() * 300);
+
+  // Apply context: keywords like "regular", "salary", "rent", "known" reduce risk
+  const contextLower = context.toLowerCase();
+  const mitigatingWords = ['regular','salary','rent','family','known','monthly','recurring','approved','verified','business','employer'];
+  const hasMitigation = mitigatingWords.some(w => contextLower.includes(w));
+
+  let result = scoreTransaction(currentTx);
+  if (hasMitigation && result.riskScore > 30) {
+    result.riskScore = Math.max(12, result.riskScore - 28);
+    if (result.riskScore < 45) {
+      result.verdict = 'SAFE';
+      result.summary = `Re-analysis with user context lowers risk to ${result.riskScore}% — transaction appears legitimate.`;
+      result.explanation = `After reviewing the additional context provided ("${context.slice(0,60)}..."), the transaction risk profile has been revised downward. ${result.explanation.split('. ').slice(1).join('. ')}`;
+    }
+  } else {
+    result.summary = `Re-analysis confirms original assessment — risk score remains at ${result.riskScore}%.`;
+  }
+
+  renderResult(result);
+  btn.disabled = false; btn.textContent = 'Re-analyze with my context →';
+}
+
+function renderResult(r) {
+
+  const risk = Math.round(
+    Math.min(100, Math.max(2, r.riskScore))
+  );
+
+  // Use risk score directly instead of verdict
+  const isFraud = risk >= 70;
+  const isSuspicious = risk >= 40 && risk < 70;
+
+  const cls = isFraud
+    ? 'fraud'
+    : isSuspicious
+    ? 'suspicious'
+    : 'safe';
+
+  const icon = isFraud
+    ? '🚨'
+    : isSuspicious
+    ? '⚠️'
+    : '✅';
+
+  const label = isFraud
+    ? 'FRAUD DETECTED'
+    : isSuspicious
+    ? 'SUSPICIOUS TRANSACTION'
+    : 'TRANSACTION SAFE';
+
+  const v = document.getElementById('dVerdict');
+
+  v.className = 'd-verdict ' + cls;
+
+  v.innerHTML = `
+    <div class="d-vicon ${cls}">${icon}</div>
+    <div>
+      <div class="d-vtitle ${cls}">
+        ${label}
+      </div>
+      <div class="d-vsub">
+        ${r.summary || ''}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dRiskPct').textContent = risk + '%';
+
+  document.getElementById('dRiskPct').style.color =
+    risk >= 70
+      ? 'var(--coral)'
+      : risk >= 40
+      ? 'var(--amber)'
+      : 'var(--teal)';
+
+  const fill = document.getElementById('dRiskFill');
+
+  fill.style.background =
+    risk >= 70
+      ? 'var(--coral)'
+      : risk >= 40
+      ? 'var(--amber)'
+      : 'var(--teal)';
+
+  fill.style.width = '0%';
+
+  setTimeout(() => {
+    fill.style.width = risk + '%';
+  }, 60);
+
+  document.getElementById('dFactors').innerHTML =
+    (r.factors || []).map(f => `
+      <div class="d-factor">
+        <div class="d-factor-top">
+          <span class="d-factor-name">${f.name}</span>
+          <span class="d-pill ${f.level}">
+            ${f.level}
+          </span>
+        </div>
+        <div class="d-factor-desc">
+          ${f.description}
+        </div>
+      </div>
+    `).join('');
+
+  document.getElementById('dExplanation').textContent =
+    r.explanation || '';
+
+  document.getElementById('dChallengeText').value = '';
+}
+// ── CHATBOT ────────────────────────────────────────────────
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatWindow').classList.toggle('open', chatOpen);
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('chatSendBtn');
+  btn.disabled = true; input.value = '';
+  const box = document.getElementById('chatMessages');
+  box.innerHTML += `<div class="bubble user">${msg}</div>`;
+  box.innerHTML += `<div class="bubble bot" id="typingBubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  box.scrollTop = box.scrollHeight;
+
+  // Simulate thinking time
+  await fakeDelay(600 + Math.random() * 600);
+
+  const reply = getBotReply(msg);
+  document.getElementById('typingBubble').remove();
+  const replyEl = document.createElement('div');
+  replyEl.className = 'bubble bot';
+  replyEl.innerHTML = formatBotReply(reply);
+  box.appendChild(replyEl);
+  box.scrollTop = box.scrollHeight;
+  btn.disabled = false;
+}
+</script>
+</body>
+</htm
