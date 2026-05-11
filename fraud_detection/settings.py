@@ -25,11 +25,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    "fraudsystem.pythonanywhere.com",
-    "127.0.0.1",
-    "localhost"
-]
+ALLOWED_HOSTS = ["*"]
 
 # ---------------------------------------------------
 # APPLICATIONS
@@ -52,6 +48,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
 
@@ -166,6 +164,8 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 # ---------------------------------------------------
 # DEFAULT PRIMARY KEY
 # ---------------------------------------------------
@@ -183,7 +183,8 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # ---------------------------------------------------
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://fraudsystem.pythonanywhere.com"
+    "https://fraudsystem.pythonanywhere.com",
+    "https://fraudshield.onrender.com"
 ]
 
 SECURE_BROWSER_XSS_FILTER = True
